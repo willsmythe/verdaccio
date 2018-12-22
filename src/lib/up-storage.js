@@ -9,28 +9,30 @@ import _ from 'lodash';
 import request from 'request';
 import Stream from 'stream';
 import URL from 'url';
-import { parseInterval, isObject, ErrorCode, buildToken } from './utils';
+import { parseInterval, isObject, ErrorCode, buildToken, encode } from './utils';
 import { ReadTarball } from '@verdaccio/streams';
-import { ERROR_CODE, TOKEN_BASIC, TOKEN_BEARER, HEADERS, HTTP_STATUS, API_ERROR, HEADER_TYPE, CHARACTER_ENCODING } from './constants';
+import { ERROR_CODE, TOKEN_BASIC, TOKEN_BEARER, HEADERS, HTTP_STATUS, API_ERROR, HEADER_TYPE, CHARACTER_ENCODING, WEB_TITLE } from './constants';
 import type { Config, UpLinkConf, Callback, Headers, Logger } from '@verdaccio/types';
 import type { IProxy } from '../../types';
 
 const LoggerApi = require('./logger');
-const encode = function(thing) {
-  return encodeURIComponent(thing).replace(/^%40/, '@');
-};
 const jsonContentType = HEADERS.JSON;
 const contentTypeAccept = `${jsonContentType};`;
 
-/**
- * Just a helper (`config[key] || default` doesn't work because of zeroes)
- * @param {Object} config
- * @param {Object} key
- * @param {Object} def
- * @return {Object}
- */
-const setConfig = (config, key, def) => {
-  return _.isNil(config[key]) === false ? config[key] : def;
+export const UPLINK_CONF = {
+  strictSSL: 'strict_ssl',
+  maxage: 'maxage',
+  timeout: 'timeout',
+  maxFails: 'max_fails',
+  failTimeout: 'fail_timeout',
+};
+
+export const defaultConf = {
+  [UPLINK_CONF.maxage]: '2m',
+  [UPLINK_CONF.timeout]: '30s',
+  [UPLINK_CONF.failTimeout]: '5m',
+  [UPLINK_CONF.maxFails]: 2,
+  [UPLINK_CONF.strictSSL]: true,
 };
 
 /**
@@ -52,7 +54,7 @@ class ProxyStorage implements IProxy {
   upname: string;
   proxy: string;
   last_request_time: number;
-  strict_ssl: boolean;
+  strictSSL: boolean;
 
   /**
    * Constructor
@@ -85,12 +87,21 @@ class ProxyStorage implements IProxy {
     }
 
     // a bunch of different configurable timers
-    this.maxage = parseInterval(setConfig(this.config, 'maxage', '2m'));
-    this.timeout = parseInterval(setConfig(this.config, 'timeout', '30s'));
-    this.max_fails = Number(setConfig(this.config, 'max_fails', 2));
-    this.fail_timeout = parseInterval(setConfig(this.config, 'fail_timeout', '5m'));
-    this.strict_ssl = Boolean(setConfig(this.config, 'strict_ssl', true));
+    this.maxage = parseInterval(this._setConfig(UPLINK_CONF.maxage));
+    this.timeout = parseInterval(this._setConfig(UPLINK_CONF.timeout));
+    this.max_fails = Number(this._setConfig(UPLINK_CONF.maxFails));
+    this.fail_timeout = parseInterval(this._setConfig(UPLINK_CONF.failTimeout));
+    this.strictSSL = Boolean(this._setConfig(UPLINK_CONF.strictSSL));
   }
+
+  /**
+   * Just a helper (`config[key] || default` doesn't work because of zeroes)
+   * @param {Object} key
+   * @return {Object}
+   */
+  _setConfig = (key: string) => {
+    return _.isNil(this.config[key]) === false ? this.config[key] : defaultConf[key];
+  };
 
   /**
    * Fetch an asset.
@@ -126,7 +137,7 @@ class ProxyStorage implements IProxy {
     const method = options.method || 'GET';
     const uri = options.uri_full || this.config.url + options.uri;
 
-    self.logger.info(
+    this.logger.info(
       {
         method: method,
         headers: headers,
@@ -137,7 +148,7 @@ class ProxyStorage implements IProxy {
 
     if (isObject(options.json)) {
       json = JSON.stringify(options.json);
-      headers['Content-Type'] = headers['Content-Type'] || HEADERS.JSON;
+      headers[HEADERS.CONTENT_TYPE] = headers[HEADERS.CONTENT_TYPE] || HEADERS.JSON;
     }
 
     let requestCallback = cb
@@ -159,7 +170,7 @@ class ProxyStorage implements IProxy {
               return;
             }
 
-            if (options.json && res.statusCode < 300) {
+            if (options.json && res.statusCode < HTTP_STATUS.MULTIPLE_CHOICES) {
               try {
                 // $FlowFixMe
                 body = JSON.parse(body.toString(CHARACTER_ENCODING.UTF8));
@@ -211,7 +222,7 @@ class ProxyStorage implements IProxy {
         encoding: null,
         gzip: true,
         timeout: this.timeout,
-        strictSSL: this.strict_ssl,
+        strictSSL: this.strictSSL,
       },
       requestCallback
     );
@@ -257,14 +268,11 @@ class ProxyStorage implements IProxy {
    */
   _setHeaders(options: any) {
     const headers = options.headers || {};
-    const accept = 'Accept';
-    const acceptEncoding = 'Accept-Encoding';
-    const userAgent = 'User-Agent';
 
-    headers[accept] = headers[accept] || contentTypeAccept;
-    headers[acceptEncoding] = headers[acceptEncoding] || 'gzip';
+    headers[HEADERS.ACCEPT] = headers[HEADERS.ACCEPT] || contentTypeAccept;
+    headers[HEADERS.ACCEPT_ENCODING] = headers[HEADERS.ACCEPT_ENCODING] || HEADERS.GZIP;
     // registry.npmjs.org will only return search result if user-agent include string 'npm'
-    headers[userAgent] = headers[userAgent] || `npm (${this.userAgent})`;
+    headers[HEADERS.USER_AGENT] = headers[HEADERS.USER_AGENT] || `npm (${this.userAgent})`;
 
     return this._setAuth(headers);
   }
@@ -278,13 +286,13 @@ class ProxyStorage implements IProxy {
   _setAuth(headers: any) {
     const { auth } = this.config;
 
-    if (_.isNil(auth) || headers['authorization']) {
+    if (_.isNil(auth) || headers[HEADERS.AUTHORIZATION.toLowerCase()]) {
       return headers;
     }
 
     // $FlowFixMe
     if (_.isObject(auth) === false && _.isObject(auth.token) === false) {
-      this._throwErrorAuth('Auth invalid');
+      this._throwErrorAuth(API_ERROR.AUTH_INVALID);
     }
 
     // get NPM_TOKEN http://blog.npmjs.org/post/118393368555/deploying-with-npm-private-modules
@@ -344,7 +352,7 @@ class ProxyStorage implements IProxy {
     }
 
     type = _.upperFirst(type);
-    headers['authorization'] = buildToken(type, token);
+    headers[HEADERS.AUTHORIZATION] = buildToken(type, token);
   }
 
   /**
@@ -404,8 +412,8 @@ class ProxyStorage implements IProxy {
   getRemoteMetadata(name: string, options: any, callback: Callback) {
     const headers = {};
     if (_.isNil(options.etag) === false) {
-      headers['If-None-Match'] = options.etag;
-      headers['Accept'] = contentTypeAccept;
+      headers[HEADERS.NONE_MATCH] = options.etag;
+      headers[HEADERS.ACCEPT] = contentTypeAccept;
     }
 
     this.request(
@@ -457,7 +465,8 @@ class ProxyStorage implements IProxy {
         return stream.emit('error', ErrorCode.getNotFound(API_ERROR.NOT_FILE_UPLINK));
       }
       if (!(res.statusCode >= HTTP_STATUS.OK && res.statusCode < HTTP_STATUS.MULTIPLE_CHOICES)) {
-        return stream.emit('error', ErrorCode.getInternalError(`bad uplink status code: ${res.statusCode}`));
+        // eslint-disable-next-line new-cap
+        return stream.emit('error', ErrorCode.getInternalError(API_ERROR.BAD_UPLINK(res.statusCode)));
       }
       if (res.headers[HEADER_TYPE.CONTENT_LENGTH]) {
         expected_length = res.headers[HEADER_TYPE.CONTENT_LENGTH];
@@ -507,7 +516,8 @@ class ProxyStorage implements IProxy {
 
     requestStream.on('response', res => {
       if (!String(res.statusCode).match(/^2\d\d$/)) {
-        return transformStream.emit('error', ErrorCode.getInternalError(`bad status code ${res.statusCode} from uplink`));
+        // eslint-disable-next-line new-cap
+        return transformStream.emit('error', ErrorCode.getInternalError(API_ERROR.BAD_STATUS_CODE_UPLINK(res.statusCode)));
       }
 
       // See https://github.com/request/request#requestoptions-callback
@@ -552,14 +562,17 @@ class ProxyStorage implements IProxy {
       // https://github.com/rlidwka/sinopia/issues/254
       //
       if (this.proxy === false) {
-        headers['X-Forwarded-For'] = (req && req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'] + ', ' : '') + req.connection.remoteAddress;
+        const headerLower = HEADERS.FORWARDED_FOR.toLowerCase();
+        headers[HEADERS.FORWARDED_FOR] = (req && req.headers[headerLower] ? req.headers[headerLower] + ', ' : '') + req.connection.remoteAddress;
       }
     }
 
     // always attach Via header to avoid loops, even if we're not proxying
-    headers['Via'] = req && req.headers['via'] ? req.headers['via'] + ', ' : '';
-
-    headers['Via'] += '1.1 ' + this.server_id + ' (Verdaccio)';
+    const headerViaLower = HEADERS.VIA.toLowerCase();
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Via#Directives
+    const VIA_PROTOCOL: string = '1.1';
+    headers[HEADERS.VIA] = req && req.headers[headerViaLower] ? req.headers[headerViaLower] + ', ' : '';
+    headers[HEADERS.VIA] += `${VIA_PROTOCOL} ${this.server_id} (${WEB_TITLE})`;
   }
 
   /**

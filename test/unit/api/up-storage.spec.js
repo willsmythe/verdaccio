@@ -1,18 +1,27 @@
 // @flow
 import _ from 'lodash';
-import ProxyStorage from '../../../src/lib/up-storage';
+import {defaultConf, UPLINK_CONF} from '../../../src/lib/up-storage';
 import AppConfig from '../../../src/lib/config';
 // $FlowFixMe
 import configExample from '../partials/config/index';
-import {setup} from '../../../src/lib/logger';
-
 import type {Config, UpLinkConf} from '@verdaccio/types';
 import type {IProxy} from '../../../types/index';
 import {API_ERROR, HTTP_STATUS} from "../../../src/lib/constants";
 import {mockServer} from './mock';
 import {DOMAIN_SERVERS} from '../../functional/config.functional';
+import {parseInterval} from '../../../src/lib/utils';
 
-setup([]);
+jest.mock('../../../src/lib/logger', () => ({
+  logger: {
+    child: jest.fn( () => (
+      {
+        warn: jest.fn(),
+        info: jest.fn(),
+        error: jest.fn(),
+        fatal: jest.fn()}
+      )
+    )
+}}));
 
 describe('UpStorge', () => {
   const mockServerPort: number = 55547;
@@ -23,8 +32,14 @@ describe('UpStorge', () => {
   const generateProxy = (config: UpLinkConf = uplinkDefault) => {
     const appConfig: Config = new AppConfig(configExample);
 
+    const ProxyStorage = require('../../../src/lib/up-storage').default;
     return new ProxyStorage(config, appConfig);
   };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.resetModules();
+  });
 
   beforeAll(async () => {
     mockRegistry = await mockServer(mockServerPort).init();
@@ -39,6 +54,58 @@ describe('UpStorge', () => {
     const proxy = generateProxy();
 
     expect(proxy).toBeDefined();
+  });
+
+  describe('UpStorge::uplinks properties', () => {
+    test('should test default values', () => {
+      const proxy = generateProxy();
+
+      expect(proxy.maxage).toEqual(parseInterval(defaultConf[UPLINK_CONF.maxage]));
+      expect(proxy.strictSSL).toEqual(defaultConf[UPLINK_CONF.strictSSL]);
+      expect(proxy.fail_timeout).toEqual(parseInterval(defaultConf[UPLINK_CONF.failTimeout]));
+      expect(proxy.max_fails).toEqual(defaultConf[UPLINK_CONF.maxFails]);
+      expect(proxy.timeout).toEqual(parseInterval(defaultConf[UPLINK_CONF.timeout]));
+    });
+
+    test('should set properly maxage', () => {
+      const proxy = generateProxy(_.assign({}, uplinkDefault, {
+        maxage: '3m'
+      }));
+
+      expect(proxy.maxage).toEqual(parseInterval('3m'));
+    });
+
+    test('should set properly strict_ssl', () => {
+      const proxy = generateProxy(_.assign({}, uplinkDefault, {
+        strict_ssl: false
+      }));
+
+      expect(proxy.strictSSL).toEqual(false);
+    });
+
+    test('should set properly fail_timeout', () => {
+      const proxy = generateProxy(_.assign({}, uplinkDefault, {
+        fail_timeout: '1m'
+      }));
+
+      expect(proxy.fail_timeout).toEqual(parseInterval('1m'));
+    });
+
+    test('should set properly max_fails', () => {
+      const proxy = generateProxy(_.assign({}, uplinkDefault, {
+        max_fails: 100
+      }));
+
+      expect(proxy.max_fails).toEqual(100);
+    });
+
+    test('should set properly timeout', () => {
+      const proxy = generateProxy(_.assign({}, uplinkDefault, {
+        timeout: '10m'
+      }));
+
+      expect(proxy.timeout).toEqual(parseInterval('10m'));
+    });
   });
 
   describe('UpStorge::getRemoteMetadata', () => {
@@ -79,6 +146,16 @@ describe('UpStorge', () => {
 
     describe('UpStorge::fetchTarball', () => {
       test('should fetch a tarball from uplink', (done) => {
+        const infoMock = jest.fn();
+        jest.doMock('../../../src/lib/logger', () => ({
+          logger: {
+            child: jest.fn( () => (
+                {
+                  info: infoMock
+                }
+              )
+            )
+        }}));
         const proxy = generateProxy();
         const tarball: string = `http://${DOMAIN_SERVERS}:${mockServerPort}/jquery/-/jquery-1.5.1.tgz`;
         const stream = proxy.fetchTarball(tarball);
@@ -90,6 +167,9 @@ describe('UpStorge', () => {
 
         stream.on('content-length', function(contentLength) {
           expect(contentLength).toBeDefined();
+          expect(infoMock).toHaveBeenCalled();
+          expect(infoMock).toHaveBeenCalledTimes(1);
+          // expect(infoMock).toHaveBeenCalledWith('dsds');
           done();
         });
 
@@ -115,46 +195,61 @@ describe('UpStorge', () => {
 
       });
 
-      test('should be offline uplink', (done) => {
+      test('should test the uplink is offline', (done) => {
+        const infoMock = jest.fn();
+        const warnMock = jest.fn();
+        jest.doMock('../../../src/lib/logger', () => ({
+          logger: {
+            child: jest.fn( () => (
+                {
+                  info: infoMock,
+                  warn: warnMock
+                }
+              )
+            )
+          }}));
         const proxy = generateProxy();
+        // this url is fake
         const tarball: string = 'http://404.verdaccioo.com';
         const stream = proxy.fetchTarball(tarball);
         expect(proxy.failed_requests).toBe(0);
-
         //to test a uplink is offline we have to be try 3 times
         //the default failed request are set to 2
-        process.nextTick(function() {
-          stream.on('error', function(err) {
-            expect(err).not.toBeNull();
-            // expect(err.statusCode).toBe(404);
-            expect(proxy.failed_requests).toBe(1);
+        stream.on('error', function(err) {
+          expect(err).not.toBeNull();
+          expect(err.statusCode).toBe('ENOTFOUND');
+          expect(proxy.failed_requests).toBe(1);
 
-            const streamSecondTry = proxy.fetchTarball(tarball);
-              streamSecondTry.on('error', function(err) {
+          // we try a second time and should fails
+          const streamSecondTry = proxy.fetchTarball(tarball);
+            streamSecondTry.on('error', function(err) {
+              expect(err).not.toBeNull();
+              /*
+                code: 'ENOTFOUND',
+                errno: 'ENOTFOUND',
+               */
+              expect(err.statusCode).toBe('ENOTFOUND');
+              expect(proxy.failed_requests).toBe(2);
+
+              // we try a third time that should return an error
+              const streamThirdTry = proxy.fetchTarball(tarball);
+              streamThirdTry.on('error', function(err) {
                 expect(err).not.toBeNull();
-                /*
-                  code: 'ENOTFOUND',
-                  errno: 'ENOTFOUND',
-                 */
-                // expect(err.statusCode).toBe(404);
+                expect(err.statusCode).toBe(HTTP_STATUS.INTERNAL_ERROR);
                 expect(proxy.failed_requests).toBe(2);
-                const streamThirdTry = proxy.fetchTarball(tarball);
-                streamThirdTry.on('error', function(err) {
-                  expect(err).not.toBeNull();
-                  expect(err.statusCode).toBe(HTTP_STATUS.INTERNAL_ERROR);
-                  expect(proxy.failed_requests).toBe(2);
-                  expect(err.message).toMatch(API_ERROR.UPLINK_OFFLINE);
-                  done();
-                });
+                expect(err.message).toMatch(API_ERROR.UPLINK_OFFLINE);
+                expect(warnMock).toHaveBeenCalled();
+                expect(warnMock).toHaveBeenCalledTimes(1);
+                expect(warnMock).toHaveBeenCalledWith({"host": `0.0.0.0:${mockServerPort}`}, "host @{host} is now offline");
+                done();
               });
-          });
+            });
         });
       });
     });
 
   describe('UpStorge::isUplinkValid', () => {
-
-    describe('valid use cases', () => {
+    describe('test valid use cases', () => {
       const validateUpLink = (
         url: string,
         tarBallUrl?: string = `${url}/artifactory/api/npm/npm/pk1-juan/-/pk1-juan-1.0.7.tgz`) => {
@@ -200,7 +295,7 @@ describe('UpStorge', () => {
       });
     });
 
-    describe('invalid use cases', () => {
+    describe('test invalid use cases', () => {
       test('should fails on validate tarball path against uplink', () => {
         const url: string = 'https://artifactory.mydomain.com';
         const tarBallUrl: string = 'https://localhost/api/npm/npm/pk1-juan/-/pk1-juan-1.0.7.tgz';

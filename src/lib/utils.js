@@ -502,3 +502,7 @@ export function parseReadme(packageName: string, readme: string): string {
 export function buildToken(type: string, token: string): string {
   return `${_.capitalize(type)} ${token}`;
 }
+
+export function encode(thing: string) {
+  return encodeURIComponent(thing).replace(/^%40/, '@');
+}
