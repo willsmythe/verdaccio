@@ -217,7 +217,7 @@ describe('UpStorge', () => {
         //the default failed request are set to 2
         stream.on('error', function(err) {
           expect(err).not.toBeNull();
-          expect(err.statusCode).toBe('ENOTFOUND');
+          expect(err.code).toBe('ENOTFOUND');
           expect(proxy.failed_requests).toBe(1);
 
           // we try a second time and should fails
@@ -228,7 +228,7 @@ describe('UpStorge', () => {
                 code: 'ENOTFOUND',
                 errno: 'ENOTFOUND',
                */
-              expect(err.statusCode).toBe('ENOTFOUND');
+              expect(err.code).toBe('ENOTFOUND');
               expect(proxy.failed_requests).toBe(2);
 
               // we try a third time that should return an error
