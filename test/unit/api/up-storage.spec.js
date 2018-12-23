@@ -91,6 +91,27 @@ describe('UpStorge', () => {
       expect(proxy.fail_timeout).toEqual(parseInterval('1m'));
     });
 
+    test('should warn if timeout is wrong set', () => {
+      const infoMock = jest.fn();
+      const warnMock = jest.fn();
+      jest.doMock('../../../src/lib/logger', () => ({
+        logger: {
+          child: jest.fn( () => (
+              {
+                info: infoMock,
+                warn: warnMock
+              }
+            )
+          )
+        }}));
+      generateProxy(_.assign({}, uplinkDefault, {
+        timeout: 30000
+      }));
+
+      expect(warnMock).toHaveBeenCalled();
+      // we might test here the text returned
+    });
+
     test('should set properly max_fails', () => {
       const proxy = generateProxy(_.assign({}, uplinkDefault, {
         max_fails: 100
