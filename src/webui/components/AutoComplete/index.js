@@ -16,19 +16,20 @@ import { Wrapper, InputField } from './styles';
 import { IProps } from './types';
 
 const renderInputComponent = (inputProps): Node => {
-  const { ref, startAdornment, disableUnderline, onKeyDown, ...others } = inputProps;
+  const { color, disableUnderline, onKeyDown, ref, startAdornment } = inputProps;
+
   return (
     <InputField
       InputProps={{
+        disableUnderline,
+        onKeyDown,
+        startAdornment,
         inputRef: node => {
           ref(node);
         },
-        startAdornment,
-        disableUnderline,
-        onKeyDown,
       }}
+      color={color}
       fullWidth={true}
-      {...others}
     />
   );
 };
@@ -88,14 +89,6 @@ const AutoComplete = ({
   suggestionsLoaded = false,
   suggestionsError = false,
 }: IProps): Node => {
-  const autosuggestProps = {
-    renderInputComponent,
-    suggestions,
-    getSuggestionValue,
-    renderSuggestion,
-    onSuggestionsFetchRequested: onSuggestionsFetch,
-    onSuggestionsClearRequested: onCleanSuggestions,
-  };
   const inputProps = {
     value,
     onChange,
@@ -108,9 +101,9 @@ const AutoComplete = ({
   };
 
   // this format avoid arrow function eslint rule
-  function renderSuggestionsContainer({ containerProps, children, query }) {
+  function renderSuggestionsContainer({ children, query }: any) {
     return (
-      <Paper {...containerProps} square={true}>
+      <Paper square={true}>
         {suggestionsLoaded && children === null && query && renderMessage(SUGGESTIONS_RESPONSE.NO_RESULT)}
         {suggestionsLoading && query && renderMessage(SUGGESTIONS_RESPONSE.LOADING)}
         {suggestionsError && renderMessage(SUGGESTIONS_RESPONSE.FAILURE)}
@@ -121,7 +114,17 @@ const AutoComplete = ({
 
   return (
     <Wrapper>
-      <Autosuggest {...autosuggestProps} inputProps={inputProps} onSuggestionSelected={onClick} renderSuggestionsContainer={renderSuggestionsContainer} />
+      <Autosuggest
+        getSuggestionValue={getSuggestionValue}
+        inputProps={inputProps}
+        onSuggestionSelected={onClick}
+        onSuggestionsClearRequested={onCleanSuggestions}
+        onSuggestionsFetchRequested={onSuggestionsFetch}
+        renderInputComponent={renderInputComponent}
+        renderSuggestion={renderSuggestion}
+        renderSuggestionsContainer={renderSuggestionsContainer}
+        suggestions={suggestions}
+      />
     </Wrapper>
   );
 };

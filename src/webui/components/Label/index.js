@@ -16,12 +16,10 @@ const Wrapper = styled.div`
   ${({ modifiers }: IProps) => modifiers && modifiers};
 `;
 
-const Label = ({ text = '', capitalize = false, weight = 'regular', ...props }: IProps): Node => {
-  return (
-    <Wrapper capitalize={capitalize} weight={weight} {...props}>
-      {text}
-    </Wrapper>
-  );
-};
+const Label = ({ text = '', capitalize = false, weight = 'regular', modifiers }: IProps): Node => (
+  <Wrapper capitalize={capitalize} modifiers={modifiers} weight={weight}>
+    {text}
+  </Wrapper>
+);
 
 export default Label;

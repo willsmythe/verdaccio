@@ -15,10 +15,7 @@ describe('<NoItem /> component', () => {
   });
 
   test('should set html from props', () => {
-    const props = {
-      text: 'This is a test string'
-    };
-    const wrapper = shallow(<NoItems {...props} />);
+    const wrapper = shallow(<NoItems text={'This is a test string'} />);
     expect(wrapper.find('h2').text()).toEqual('This is a test string');
     expect(wrapper.html()).toMatchSnapshot();
   });

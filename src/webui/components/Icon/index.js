@@ -37,14 +37,14 @@ export const Icons: $Shape<IIconsMap> = {
   time,
 };
 
-const Icon = ({ className, name, size = 'sm', img = false, pointer = false, ...props }: IProps): Node => {
+const Icon = ({ className, name, size = 'sm', img = false, pointer = false, modifiers, onClick }: IProps): Node => {
   const title = capitalize(name);
   return img ? (
-    <ImgWrapper className={className} pointer={pointer} size={size} title={title} {...props}>
+    <ImgWrapper className={className} modifiers={modifiers} onClick={onClick} pointer={pointer} size={size} title={title}>
       <Img alt={title} src={Icons[name]} />
     </ImgWrapper>
   ) : (
-    <Svg className={className} pointer={pointer} size={size} {...props}>
+    <Svg className={className} modifiers={modifiers} onClick={onClick} pointer={pointer} size={size}>
       <title>{title}</title>
       <use xlinkHref={`${Icons[name]}#${name}`} />
     </Svg>

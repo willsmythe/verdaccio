@@ -14,13 +14,8 @@ describe('<PackageSidebar /> : <Module />', () => {
     expect(console.error).toHaveBeenCalled();
   });
   test('should load module component', () => {
-    const props = {
-      title: 'Test title',
-      description: 'Test description',
-      className: 'module-component'
-    };
     const wrapper = shallow(
-      <Module {...props}>
+      <Module className={'module-component'} description={'Test description'} title={'Test title'} >
         <p>{'test children'}</p>
       </Module>
     );

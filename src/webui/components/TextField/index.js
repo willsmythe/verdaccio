@@ -4,15 +4,21 @@
  */
 
 import React from 'react';
-import { TextFieldProps, default as TextFieldMaterialUI } from '@material-ui/core/TextField';
+import { TextFieldProps, default as MuiTextField } from '@material-ui/core/TextField';
 
-const TextField = ({ InputProps, classes, ...other }: TextFieldProps) => (
-  <TextFieldMaterialUI
-    {...other}
+const TextField = ({ InputProps, classes, placeholder, name, value, type, multiline, id, onChange }: TextFieldProps) => (
+  <MuiTextField
     InputProps={{
-      ...InputProps,
       classes,
+      ...InputProps,
     }}
+    id={id}
+    multiline={multiline}
+    name={name}
+    onChange={onChange}
+    placeholder={placeholder}
+    type={type}
+    value={value}
   />
 );
 

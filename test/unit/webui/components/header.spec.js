@@ -9,17 +9,9 @@ import Header from '../../../../src/webui/components/Header';
 
 describe('<Header /> component with logged in state', () => {
   let wrapper;
-  let props;
 
   beforeEach(() => {
-    props = {
-      username: 'test user',
-      handleLogout: jest.fn(),
-      onToggleLoginModal: jest.fn(),
-      scope: 'test scope',
-      withoutSearch: true,
-    };
-    wrapper = mount(<Header {...props} />);
+    wrapper = mount(<Header handleLogout={jest.fn()} onToggleLoginModal={jest.fn()} scope={'test scope'} username={'test user'} withoutSearch={true} />);
   });
 
   test('should load the component in logged in state', () => {
@@ -52,16 +44,10 @@ describe('<Header /> component with logged in state', () => {
 
 describe('<Header /> component with logged out state', () => {
   let wrapper;
-  let props;
+  const onToggleLoginModal = jest.fn();
 
   beforeEach(() => {
-    props = {
-      handleLogout: jest.fn(),
-      onToggleLoginModal: jest.fn(),
-      scope: 'test scope',
-      withoutSearch: true,
-    };
-    wrapper = mount(<Header {...props} />);
+    wrapper = mount(<Header handleLogout={jest.fn()} onToggleLoginModal={onToggleLoginModal} scope={'test scope'} withoutSearch={true} />);
   });
 
   test('should load the component in logged out state', () => {
@@ -97,6 +83,6 @@ describe('<Header /> component with logged out state', () => {
     const { handleToggleLogin } = wrapper.instance();
     handleToggleLogin();
     expect(wrapper.state('anchorEl')).toBeNull();
-    expect(props.onToggleLoginModal).toHaveBeenCalled();
+    expect(onToggleLoginModal).toHaveBeenCalled();
   });
 });

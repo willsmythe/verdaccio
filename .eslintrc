@@ -122,7 +122,7 @@
     "linebreak-style": 0,
     "quote-props":["error", "as-needed"],
     "verdaccio/jsx-no-style": ["warn"],
-    "verdaccio/jsx-spread": ["warn"],
+    "verdaccio/jsx-spread": ["error"],
     "jest/expect-expect": 0
   }
 }

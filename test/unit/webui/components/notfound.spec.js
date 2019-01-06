@@ -15,10 +15,7 @@ describe('<NotFound /> component', () => {
   });
 
   test('should set html from props', () => {
-    const props = {
-      pkg: 'verdaccio'
-    };
-    const wrapper = shallow(<NotFound {...props} />);
+    const wrapper = shallow(<NotFound pkg={'verdaccio'} />);
     expect(wrapper.find('h1').text()).toEqual('Error 404 - verdaccio');
     expect(wrapper.find('p').text()).toEqual(
       'Oops, The package you are trying to access does not exist.'

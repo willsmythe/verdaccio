@@ -13,34 +13,22 @@ describe('<PackageSidebar /> : <Infos />', () => {
   });
 
   test('should load the Info component with props', () => {
-    const props = {
-      homepage: 'https://www.verdaccio.org',
-      license: 'MIT',
-      repository: 'https://github.com/verdaccio/verdaccio'
-    }
-    const wrapper = shallow(<Infos {...props} />);
+    const wrapper = shallow(<Infos homepage={'https://www.verdaccio.org'} license={'MIT'} repository={'https://github.com/verdaccio/verdaccio'} />);
     expect(wrapper.html()).toMatchSnapshot();
   });
 
   test('should load the Info component with homepage only', () => {
-    const props = {
-      homepage: 'https://www.verdaccio.org'
-    }
-    const wrapper = shallow(<Infos {...props} />);
+    const wrapper = shallow(<Infos homepage={'https://www.verdaccio.org'} />);
     expect(wrapper.html()).toMatchSnapshot();
   });
 
   test('should load the Info component with license only', () => {
-    const props = {
-      license: 'MIT',
-    }
-    const wrapper = shallow(<Infos {...props} />);
+    const wrapper = shallow(<Infos license={'MIT'} />);
     expect(wrapper.html()).toMatchSnapshot();
   });
 
   test('should load the Info component with repository only', () => {
-    const props = { repository: 'https://github.com/verdaccio/verdaccio' };
-    const wrapper = shallow(<Infos {...props} />);
+    const wrapper = shallow(<Infos repository={'https://github.com/verdaccio/verdaccio'} />);
     expect(wrapper.html()).toMatchSnapshot();
   });
 });

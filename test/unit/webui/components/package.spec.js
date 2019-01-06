@@ -32,7 +32,15 @@ describe('<Package /> component', () => {
     };
 
     const wrapper = shallow(
-      <Package {...props} />
+      <Package 
+        author={props.author}
+        description={props.description}
+        keywords={props.keywords}
+        license={props.license}
+        name={props.name}
+        time={props.time}
+        version={props.version}
+      />
     );
 
 
@@ -64,20 +72,19 @@ describe('<Package /> component', () => {
   });
 
   test.skip('should load the component without author', () => {
-    const props = {
-      name: 'verdaccio',
-      version: '1.0.0',
-      time: dateOneMonthAgo(),
-      license: 'MIT',
-      author: {
-        name: 'Anonymous',
-        email: '',
-        avatar: ''
-      },
-      description: 'Private NPM repository'
-    };
     const wrapper = shallow(
-      <Package {...props} />
+      <Package 
+        author={{
+          name: 'Anonymous',
+          email: '',
+          avatar: ''
+        }}
+        description={'Private NPM repository'}
+        license={'MIT'}
+        name={'verdaccio'}
+        time={dateOneMonthAgo()}
+        version={'1.0.0'}
+      />
     );
 
     // integration expectations

@@ -33,7 +33,7 @@ export default class PackageList extends React.Component {
         const author = formatAuthor(pkg.author);
         const license = formatLicense(pkg.license);
         return (
-          <Package key={i} {...{ name, version, author, description, license, time, keywords }} />
+          <Package author={author} description={description} key={i} keywords={keywords} license={license} name={name} time={time} version={version} />
         );
       })
     );

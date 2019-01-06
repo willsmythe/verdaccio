@@ -19,7 +19,7 @@ export function asyncComponent(getComponentFunc) {
     render() {
       const {Component} = this.state;
       if (Component) {
-        return <Component {...this.props} />;
+        return <Component />;
       }
       return null;
     }

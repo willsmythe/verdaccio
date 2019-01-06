@@ -37,6 +37,7 @@ describe('App', () => {
   beforeEach(() => {
     wrapper = mount(<App />);
   });
+  
   test('loadLogo: set logo url in state', async () => {
     const { loadLogo } = wrapper.instance();
     await loadLogo();

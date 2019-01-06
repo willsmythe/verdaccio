@@ -16,12 +16,7 @@ describe('<PackageDetail /> component', () => {
   });
 
   test('should load the component', () => {
-    const props = {
-      readMe: 'Test readme',
-      packageName: WEB_TITLE
-    };
-    const wrapper = shallow(<PackageDetail {...props} />);
-
+    const wrapper = shallow(<PackageDetail packageName={WEB_TITLE} readMe={'Test readme'} />);
     expect(wrapper.find('h1').text()).toEqual(WEB_TITLE);
     expect(
       wrapper

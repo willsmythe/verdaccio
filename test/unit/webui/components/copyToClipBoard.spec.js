@@ -11,13 +11,9 @@ import { CopyIcon } from '../../../../src/webui/components/CopyToClipBoard/style
 
 describe('<CopyToClipBoard /> component', () => {
   let wrapper;
-  let props;
 
   beforeEach(() => {
-    props = {
-      text: 'copy text',
-    };
-    wrapper = shallow(<CopyToClipBoard {...props} />);
+    wrapper = shallow(<CopyToClipBoard text={'copy text'} />);
   });
 
   test('render the component', () => {

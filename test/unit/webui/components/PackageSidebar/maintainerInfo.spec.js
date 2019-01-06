@@ -15,12 +15,7 @@ describe('<PackageSidebar /> : <Maintainers /> <MaintainerInfo />', () => {
   });
 
   test('should load the component and match with snapshot', () => {
-    const props = {
-      title: 'test-title',
-      name: 'test',
-      avatar: 'http://xyz.com/profile.jpg'
-    };
-    const wrapper = shallow(<MaintainerInfo {...props} />);
+    const wrapper = shallow(<MaintainerInfo avatar={'http://xyz.com/profile.jpg'} name={'test'} title={'test-title'} />);
     expect(wrapper.find('.maintainer').prop('title')).toEqual('test');
     expect(wrapper.find('img').prop('src')).toEqual(
       'http://xyz.com/profile.jpg'

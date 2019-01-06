@@ -18,9 +18,8 @@ export const Wrapper = styled.div`
   }
 `;
 
-export const InputField = ({ color, ...others }: IInputField) => (
+export const InputField = ({ color }: IInputField) => (
   <TextField
-    {...others}
     classes={{
       input: css`
         && {

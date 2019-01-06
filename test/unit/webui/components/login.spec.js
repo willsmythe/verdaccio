@@ -31,44 +31,39 @@ describe('<LoginModal />', () => {
   });
 
   test('should load the component with props', () => {
-    const props = {
-      visibility: true,
-      error: {
-        type: 'error',
-        title: 'Error Title',
-        description: 'Error Description',
-      },
-      onCancel: () => {},
-      onSubmit: () => {},
-    };
-    const wrapper = mount(<LoginModal {...props} />);
+    const wrapper = mount(
+      <LoginModal
+        error={{
+          type: 'error',
+          title: 'Error Title',
+          description: 'Error Description',
+        }}
+        onCancel={jest.fn()}
+        visibility={true}
+      />
+    );
     expect(wrapper.html()).toMatchSnapshot();
   });
 
   test('onCancel: should close the login modal', () => {
-    const props = {
-      visibility: true,
-      error: {
-        type: 'error',
-        title: 'Error Title',
-        description: 'Error Description',
-      },
-      onCancel: jest.fn(),
-      onSubmit: () => {},
-    };
-    const wrapper = mount(<LoginModal {...props} />);
+    const onCancel = jest.fn();
+    const wrapper = mount(
+      <LoginModal
+        error={{
+          type: 'error',
+          title: 'Error Title',
+          description: 'Error Description',
+        }}
+        onCancel={onCancel}
+        visibility={true}
+      />
+    );
     wrapper.find('button[id="login--form-cancel"]').simulate('click');
-    expect(props.onCancel).toHaveBeenCalled();
+    expect(onCancel).toHaveBeenCalled();
   });
 
   test('setCredentials - should set username and password in state', () => {
-    const props = {
-      visibility: true,
-      error: {},
-      onCancel: () => {},
-      onSubmit: () => {},
-    };
-    const wrapper = mount(<LoginModal {...props} />);
+    const wrapper = mount(<LoginModal visibility={true} />);
     const { setCredentials } = wrapper.instance();
 
     expect(setCredentials('username', eventUsername)).toBeUndefined();
@@ -79,14 +74,7 @@ describe('<LoginModal />', () => {
   });
 
   test('validateCredentials: should validate credentials', async () => {
-    const props = {
-      visibility: true,
-      error: {},
-      onCancel: () => {},
-      onSubmit: jest.fn(),
-    };
-
-    const wrapper = mount(<LoginModal {...props} />);
+    const wrapper = mount(<LoginModal onSubmit={jest.fn()} visibility={true} />);
     const instance = wrapper.instance();
 
     instance.submitCredentials = jest.fn();
@@ -107,11 +95,8 @@ describe('<LoginModal />', () => {
   });
 
   test('submitCredentials: should submit credentials', async () => {
-    const props = {
-      onSubmit: jest.fn(),
-    };
-
-    const wrapper = mount(<LoginModal {...props} />);
+    const onSubmit = jest.fn();
+    const wrapper = mount(<LoginModal onSubmit={onSubmit} />);
     const { setCredentials, submitCredentials } = wrapper.instance();
     expect(setCredentials('username', eventUsername)).toBeUndefined();
     expect(wrapper.state('form').username.value).toEqual('xyz');
@@ -120,7 +105,7 @@ describe('<LoginModal />', () => {
     expect(wrapper.state('form').password.value).toEqual('1234');
 
     await submitCredentials();
-    expect(props.onSubmit).toHaveBeenCalledWith('xyz', '1234');
+    expect(onSubmit).toHaveBeenCalledWith('xyz', '1234');
     expect(wrapper.state('form').username.value).toEqual('');
     expect(wrapper.state('form').username.pristine).toEqual(true);
     expect(wrapper.state('form').password.value).toEqual('');

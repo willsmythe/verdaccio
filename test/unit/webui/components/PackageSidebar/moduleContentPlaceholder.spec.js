@@ -14,10 +14,7 @@ describe('<PackageSidebar /> : <ModuleContentPlaceholder />', () => {
     expect(console.error).toHaveBeenCalled();
   });
   test('should load module component', () => {
-    const props = {
-      text: 'Test text'
-    };
-    const wrapper = shallow(<ModuleContentPlaceholder {...props} />);
+    const wrapper = shallow(<ModuleContentPlaceholder text={'Test text'} />);
     expect(wrapper.html()).toMatchSnapshot();
   });
 });
