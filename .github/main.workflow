@@ -22,15 +22,8 @@ action "Audit" {
   args = "audit"
 }
 
-action "Test" {
-  needs = "Build"
-  uses = "verdaccio/github-actions/yarn@master"
-  args = "test:unit"
-  needs = ["Install", "Lint"]
-}
-
 action "Test Publish Verdaccio" {
   uses = "verdaccio/github-actions/publish@v0.1.0"
-  needs = ["Install", "Test"]
+  needs = ["Lint"]
   args = "-ddd"
 }
