@@ -19,6 +19,6 @@ action "Audit" {
 
 action "Test Publish Verdaccio" {
   uses = "verdaccio/github-actions/publish@v0.1.0"
-  needs = ["Install", "Audit"]
+  needs = ["Install"]
   args = "-ddd"
 }
