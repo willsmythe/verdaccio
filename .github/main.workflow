@@ -7,18 +7,18 @@ workflow "New workflow" {
 }
 
 action "Install" {
-  uses = "nuxt/actions-yarn@master"
+  uses = "verdaccio/github-actions/yarn@master"
   args = "install --frozen-lockfile --non-interactive"
 }
 
 action "Audit" {
-  uses = "nuxt/actions-yarn@master"
+  uses = "verdaccio/github-actions/yarn@master"
   args = "audit"
 }
 
 action "Test" {
   needs = "Build"
-  uses = "borales/actions-yarn@master"
+  uses = "verdaccio/github-actions/yarn@master"
   args = "test:all"
   needs = ["Install"]
 }
