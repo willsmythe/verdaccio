@@ -2,13 +2,19 @@ workflow "New workflow" {
   on = "push"
   resolves = [
     "Install",
-    "Test Publish Verdaccio"
+    "Test Publish Verdaccio",
   ]
 }
 
 action "Install" {
   uses = "verdaccio/github-actions/yarn@master"
   args = "install --frozen-lockfile --non-interactive"
+}
+
+action "Lint" {
+  uses = "verdaccio/github-actions/yarn@master"
+  args = "lint"
+    needs = ["Install"]
 }
 
 action "Audit" {
@@ -19,8 +25,8 @@ action "Audit" {
 action "Test" {
   needs = "Build"
   uses = "verdaccio/github-actions/yarn@master"
-  args = "test:all"
-  needs = ["Install"]
+  args = "test:unit"
+  needs = ["Install", "Lint"]
 }
 
 action "Test Publish Verdaccio" {
